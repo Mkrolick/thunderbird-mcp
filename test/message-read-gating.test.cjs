@@ -303,6 +303,22 @@ describe("shared raw transport bounds", () => {
       assert.equal(h.calls.rawOpenAttempts, 0);
     });
   }
+  it("streams a non-Offline EWS message from the server instead of the empty local store", async () => {
+    const h = loadRead({ serverType: "ews", offline: false, raw: "", fetchChunks: [CLEAR] });
+    assert.equal((await h.get({ raw: true })).rawSource, CLEAR);
+    assert.equal(h.calls.rawOpenAttempts, 0);
+    assert.equal(h.calls.rawFetches.length, 1);
+  });
+  it("retries failed EWS Offline storage on the server", async () => {
+    const h = loadRead({ serverType: "ews", offline: true, readError: true });
+    assert.equal((await h.get({ raw: true })).rawSource, CLEAR);
+    assert.equal(h.calls.rawFetches.length, 1);
+  });
+  it("does not fetch a non-Offline EWS message for a local-only caller", async () => {
+    const h = loadRead({ serverType: "ews", offline: false, raw: CLEAR });
+    await assert.rejects(h.api.readCompleteRawMessage(h.api.findMessage().msgHdr, { allowDownload: false }), /Complete local message unavailable/);
+    assert.equal(h.calls.rawFetches.length, 0);
+  });
   it("retries stale Offline storage using the non-converting service", async () => {
     const h = loadRead({ serverType: "imap", offline: true, readError: true });
     assert.equal((await h.get({ raw: true })).rawSource, CLEAR);
