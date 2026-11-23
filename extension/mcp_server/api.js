@@ -9657,6 +9657,8 @@ var mcpServer = class extends ExtensionCommon.ExtensionAPI {
               return findMessage(messageId, folderPath).error || null;
             }
 
+            const REMOTE_STORE_SERVER_TYPES = new Set(["imap", "ews"]);
+
             /**
              * Reads a message's complete raw source. An IMAP message's local copy
              * is complete only once Thunderbird flags it Offline; before that the
@@ -9677,7 +9679,10 @@ var mcpServer = class extends ExtensionCommon.ExtensionAPI {
                 checkAccess();
                 if (Date.now() >= deadline) throw new Error(MESSAGE_STREAM_DEADLINE_ERROR);
               };
-              const isImap = msgHdr.folder?.server?.type === "imap";
+              // IMAP and EWS (Exchange) keep bodies on the server; the local store may be
+              // empty or partial until Thunderbird downloads them, so both fall back to
+              // streaming from the server.
+              const isImap = REMOTE_STORE_SERVER_TYPES.has(msgHdr.folder?.server?.type);
               try {
                 check();
                 if (!allowDownload && ((msgHdr.flags & Ci.nsMsgMessageFlags.Partial) ||
