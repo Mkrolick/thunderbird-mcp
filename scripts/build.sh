@@ -47,8 +47,8 @@ if git -C "$PROJECT_DIR" describe --tags --always > /dev/null 2>&1; then
 elif git -C "$PROJECT_DIR" rev-parse --short HEAD > /dev/null 2>&1; then
   VERSION=$(git -C "$PROJECT_DIR" rev-parse --short HEAD)
 fi
-# Append +dirty if there are uncommitted changes
-if ! git -C "$PROJECT_DIR" diff --quiet 2>/dev/null || ! git -C "$PROJECT_DIR" diff --cached --quiet 2>/dev/null; then
+# Append +dirty if there are uncommitted changes (dist/ is build output, so a previous build does not count)
+if ! git -C "$PROJECT_DIR" diff --quiet -- . ':(exclude)dist' 2>/dev/null || ! git -C "$PROJECT_DIR" diff --cached --quiet -- . ':(exclude)dist' 2>/dev/null; then
   VERSION="${VERSION}+dirty"
 fi
 if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
